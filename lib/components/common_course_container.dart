@@ -1,32 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:kids_courses/models/course_status_data.dart';
 import 'package:kids_courses/models/session_tile_data.dart';
 import 'package:kids_courses/res/images.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'common_white_button.dart';
 
 const _colorWhiteBG = Color(0xffFFFAF3);
 
 class CommonCourseStatus extends StatelessWidget {
-  CommonCourseStatus({
+  CommonCourseStatus(
+    this.data, {
     Key? key,
-    required this.primaryColor,
-    required this.secondaryColor,
-    required this.contentTitle,
-    required this.completedSessionsCount,
-    required this.remainingSessionsCount,
-    required this.courseCount,
-    required this.favoriteCount,
   }) : super(key: key);
 
-  final Color primaryColor;
-  final Color secondaryColor;
-  final String contentTitle;
-  final int completedSessionsCount;
-  final int remainingSessionsCount;
-  final int courseCount;
-  final int favoriteCount;
+  final CourseStatusData data;
   final ValueNotifier<bool> _sessionListExpanded = ValueNotifier(false);
 
   void _toggleExpanded() {
@@ -40,7 +30,7 @@ class CommonCourseStatus extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28),
         ),
-        color: primaryColor,
+        color: data.primaryColor,
       ),
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.only(
@@ -62,7 +52,7 @@ class CommonCourseStatus extends StatelessWidget {
                 right: 16,
               ),
               style: NeumorphicStyle(
-                color: primaryColor,
+                color: data.primaryColor,
                 shadowLightColor: Colors.white38,
                 shape: NeumorphicShape.concave,
                 boxShape: NeumorphicBoxShape.roundRect(
@@ -73,39 +63,40 @@ class CommonCourseStatus extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    contentTitle,
+                    data.contentTitle,
                     style: context.getTextTheme.headline6?.copyWith(
                       color: Colors.white,
                       fontFamily: 'Nexa-Bold',
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const NeumorphicProgress(
-                    percent: 0.25,
+                  NeumorphicProgress(
+                    percent:
+                        data.completedSessionsCount / data.totalSessionsCount,
                     style: ProgressStyle(
                       accent: Colors.white,
                       variant: Colors.white,
-                      depth: 0.5,
+                      depth: 4,
                       border: NeumorphicBorder(
-                        color: Color(0xff389BFF),
-                        width: 0.1,
+                        color: data.secondaryColor,
+                        width: 0.9,
                       ),
                     ),
                   ),
                   const SizedBox(height: 8),
                   SessionProgressText(
-                    completedSessionCount: completedSessionsCount,
-                    remainingSessionCount: remainingSessionsCount,
-                  ),
+                      completedSessionCount: data.completedSessionsCount,
+                      remainingSessionCount: data.remainingSessionsCount,
+                      isCompleted: data.isCompleted),
                   const SizedBox(height: 8),
                   ValueListenableBuilder<bool>(
                     valueListenable: _sessionListExpanded,
                     builder: (context, value, _) {
                       return CourseReward(
-                        primaryColor: primaryColor,
-                        secondaryColor: secondaryColor,
-                        courseCount: courseCount,
-                        favoriteCount: favoriteCount,
+                        primaryColor: data.primaryColor,
+                        secondaryColor: data.secondaryColor,
+                        courseCount: data.creditCount,
+                        favoriteCount: data.ratingCount,
                         isExpanded: value,
                         onToggle: _toggleExpanded,
                       );
@@ -118,10 +109,12 @@ class CommonCourseStatus extends StatelessWidget {
           const SizedBox(height: 16),
           ValueListenableBuilder<bool>(
             valueListenable: _sessionListExpanded,
-            child: SessionsListView(primaryColor: primaryColor),
             builder: (context, isExpanded, child) {
               return isExpanded
-                  ? SessionsListView(primaryColor: primaryColor)
+                  ? SessionsListView(
+                      primaryColor: data.primaryColor,
+                      sessions: data.sessions,
+                    )
                   : const SizedBox(height: 0);
             },
           ),
@@ -140,13 +133,15 @@ class CommonCourseStatus extends StatelessWidget {
                 text: "Watch Lessons",
                 iconData: Icons.play_circle_fill_rounded,
                 onPressed: () {},
-                primaryColor: primaryColor,
+                primaryColor: data.primaryColor,
               ),
               CommonWhiteButton(
-                text: "Schedule",
-                iconData: Icons.access_time_filled_rounded,
+                text: data.isCompleted ? "Certificate" : "Schedule",
+                iconData: data.isCompleted
+                    ? FontAwesomeIcons.award
+                    : Icons.access_time_filled_rounded,
                 onPressed: () {},
-                primaryColor: primaryColor,
+                primaryColor: data.primaryColor,
               ),
             ],
           ),
@@ -160,9 +155,11 @@ class SessionsListView extends StatelessWidget {
   const SessionsListView({
     Key? key,
     required this.primaryColor,
+    required this.sessions,
   }) : super(key: key);
 
   final Color primaryColor;
+  final List<SessionTileData> sessions;
 
   @override
   Widget build(BuildContext context) {
@@ -197,9 +194,7 @@ class SessionsListView extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: SessionTileData.dummyDatas
-                .map((data) => SessionInfoTile(data))
-                .toList(),
+            children: sessions.map((data) => SessionInfoTile(data)).toList(),
           ),
         ),
       ),
@@ -323,6 +318,7 @@ class CourseReward extends StatelessWidget {
               color: _colorWhiteBG,
               shadowLightColor: secondaryColor,
               boxShape: const NeumorphicBoxShape.circle(),
+              shape: NeumorphicShape.concave,
             ),
             child: Icon(
               isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
@@ -396,10 +392,12 @@ class SessionProgressText extends StatelessWidget {
     Key? key,
     required this.completedSessionCount,
     required this.remainingSessionCount,
+    required this.isCompleted,
   }) : super(key: key);
 
   final int completedSessionCount;
   final int remainingSessionCount;
+  final bool isCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -423,23 +421,25 @@ class SessionProgressText extends StatelessWidget {
             )
           ],
         ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              "Remaining",
-              style:
-                  context.getTextTheme.caption?.copyWith(color: Colors.white),
-            ),
-            Text(
-              "$remainingSessionCount Sessions",
-              style: context.getTextTheme.headline6?.copyWith(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-            )
-          ],
-        )
+        isCompleted
+            ? SvgPicture.asset(ImageRes.trophyImage)
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    "Remaining",
+                    style: context.getTextTheme.caption
+                        ?.copyWith(color: Colors.white),
+                  ),
+                  Text(
+                    "$remainingSessionCount Sessions",
+                    style: context.getTextTheme.headline6?.copyWith(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  )
+                ],
+              )
       ],
     );
   }

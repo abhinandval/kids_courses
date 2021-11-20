@@ -7,13 +7,21 @@ class SessionTileData {
   final int creditCount;
   final bool isLocked;
 
-  SessionTileData(
+  SessionTileData._(
     this.sessionDescription,
     this.sessionNumber,
     this.favCount,
     this.creditCount, [
     this.isLocked = false,
   ]);
+
+  SessionTileData({
+    required this.sessionDescription,
+    required this.sessionNumber,
+    required this.favCount,
+    required this.creditCount,
+    this.isLocked = false,
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -26,7 +34,7 @@ class SessionTileData {
   }
 
   factory SessionTileData.fromMap(Map<String, dynamic> map) {
-    return SessionTileData(
+    return SessionTileData._(
       map['sessionDescription'] ?? '',
       map['sessionNumber'] ?? 0,
       map['favCount'] ?? 0,
