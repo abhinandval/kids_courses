@@ -7,20 +7,19 @@ class CommonWhiteButton extends StatelessWidget {
   const CommonWhiteButton({
     Key? key,
     this.onPressed,
-    required this.icon,
+    required this.iconData,
     required this.text,
     required this.primaryColor,
   }) : super(key: key);
 
   final void Function()? onPressed;
-  final IconData icon;
+  final IconData iconData;
   final Color primaryColor;
   final String text;
 
   @override
   Widget build(BuildContext context) {
     return NeumorphicButton(
-      margin: const EdgeInsets.only(top: 12),
       onPressed: onPressed,
       style: NeumorphicStyle(
         color: _colorButtonBG,
@@ -38,7 +37,7 @@ class CommonWhiteButton extends StatelessWidget {
                 shadowLightColor: Colors.white38,
                 boxShape: const NeumorphicBoxShape.circle()),
             child: NeumorphicIcon(
-              Icons.play_circle_fill,
+              iconData,
               style: const NeumorphicStyle(
                 shadowLightColor: Colors.white38,
                 shape: NeumorphicShape.concave,
@@ -48,7 +47,7 @@ class CommonWhiteButton extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(color: primaryColor),
+            style: TextStyle(color: primaryColor, fontFamily: 'Nexa-Bold'),
           ),
           const SizedBox(width: 8),
         ],

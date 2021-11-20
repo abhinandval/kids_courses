@@ -32,26 +32,26 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: const Color(0xff96C8F8),
-        child: Column(
-          children: <Widget>[
-            Container(
-              margin: const EdgeInsets.only(top: 32),
-              height: 300,
-              transform: Matrix4.translationValues(0, 100, 0),
-              decoration: const ShapeDecoration(
-                shape: RoundedRectangleBorder(),
-                color: Colors.lightBlue,
+      body: SingleChildScrollView(
+        child: Container(
+          color: const Color(0xff96C8F8),
+          child: Column(
+            children: <Widget>[
+              Container(
+                margin: const EdgeInsets.only(top: 32),
+                height: 300,
+                transform: Matrix4.translationValues(0, 100, 0),
+                decoration: const ShapeDecoration(
+                  shape: RoundedRectangleBorder(),
+                  color: Colors.lightBlue,
+                ),
               ),
-            ),
-            Expanded(
-              child: Container(
+              Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                 ),
                 color: Colors.white,
-                child: ListView(
+                child: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8.0),
@@ -108,7 +108,7 @@ class MyHomePage extends StatelessWidget {
                     const SizedBox(
                       height: 16,
                     ),
-                    const CommonCourseStatus(
+                    CommonCourseStatus(
                       contentTitle: "Hip Hop",
                       completedSessionsCount: 4,
                       remainingSessionsCount: 8,
@@ -117,7 +117,7 @@ class MyHomePage extends StatelessWidget {
                       primaryColor: Color(0xff66B4FF),
                       secondaryColor: Color(0xff399AFF),
                     ),
-                    const CommonCourseStatus(
+                    CommonCourseStatus(
                       contentTitle: "Painting",
                       completedSessionsCount: 4,
                       remainingSessionsCount: 8,
@@ -128,9 +128,9 @@ class MyHomePage extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-            )
-          ],
+              )
+            ],
+          ),
         ),
       ),
     );
