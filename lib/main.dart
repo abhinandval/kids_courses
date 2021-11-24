@@ -1,14 +1,16 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:kids_courses/res/images.dart';
 
 import 'components/common_course_container.dart';
 import 'components/path_bg.dart';
+import 'cubits/courseSessions/course_session_cubit.dart';
 import 'models/course_status_data.dart';
-import 'models/session_tile_data.dart';
+import 'models/profile_sessions.dart';
+import 'res/images.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,33 +39,72 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color(0xff96C8F8),
-        body: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            const Positioned(
-              top: 10,
-              left: 0,
-              right: 0,
-              child: UserButtons(),
-            ),
-            const Positioned.fill(
-              top: 90,
-              child: MentorInfo(),
-            ),
-            const Positioned(
-              top: 70,
-              left: 0,
-              right: 0,
-              child: MentorButton(),
-            ),
-            Positioned.fill(
-              top: 290,
-              child: UserCoursesAndSessions(),
-            )
-          ],
+      child: BlocProvider(
+        create: (context) => CourseSessionCubit()..fetchData(),
+        child: Scaffold(
+          backgroundColor: const Color(0xff96C8F8),
+          body: BlocBuilder<CourseSessionCubit, CourseSessionState>(
+            builder: (context, state) {
+              if (state is CourseSessionSuccess) {
+                return ProfileWidget(state.profileSessions);
+              } else if (state is CourseSessionFailed) {
+                return const Text("Failed");
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class ProfileWidget extends StatelessWidget {
+  ProfileWidget(
+    this.mentorProfiles, {
+    Key? key,
+  })  : selectedMentorProfile = ValueNotifier(mentorProfiles[0]),
+        super(key: key);
+
+  final List<MentorProfileData> mentorProfiles;
+  final ValueNotifier<MentorProfileData> selectedMentorProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<MentorProfileData>(
+      valueListenable: selectedMentorProfile,
+      builder: (context, mentorProfile, _) => Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          const Positioned(
+            top: 10,
+            left: 0,
+            right: 0,
+            child: UserButtons(),
+          ),
+          const Positioned.fill(
+            top: 90,
+            child: MentorInfo(),
+          ),
+          Positioned(
+            top: 70,
+            left: 0,
+            right: 0,
+            child: MentorButton(
+              initialData: mentorProfile,
+              items: mentorProfiles,
+              onChange: (value) {
+                if (value != null) {
+                  selectedMentorProfile.value = value;
+                }
+              },
+            ),
+          ),
+          Positioned.fill(
+            top: 290,
+            child: UserCoursesAndSessions(mentorProfile),
+          )
+        ],
       ),
     );
   }
@@ -115,13 +156,39 @@ class UserButtons extends StatelessWidget {
 class MentorButton extends StatelessWidget {
   const MentorButton({
     Key? key,
+    required this.initialData,
+    required this.items,
+    required this.onChange,
   }) : super(key: key);
+
+  final MentorProfileData initialData;
+  final List<MentorProfileData> items;
+  final ValueChanged<MentorProfileData?> onChange;
+
+  Widget buildSelectedItem(String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset(
+          ImageRes.buttonBird,
+          height: 32,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text.length > 6 ? text.substring(0, 6) + "..." : text,
+          style: const TextStyle(
+            color: Color(0xff777777),
+            fontFamily: 'Nexa-Bold',
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: NeumorphicButton(
-        onPressed: () {},
+      child: Neumorphic(
         style: const NeumorphicStyle(
           color: Colors.white,
           shadowLightColor: Colors.white38,
@@ -133,28 +200,36 @@ class MentorButton extends StatelessWidget {
           vertical: 6,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                ImageRes.buttonBird,
-                height: 32,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                "Rom Jacob",
-                style: TextStyle(
-                  color: Color(0xff777777),
-                  fontFamily: 'Nexa-Bold',
-                ),
-              ),
-              const Icon(Icons.arrow_drop_down),
-            ],
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: DropdownButton<MentorProfileData>(
+            value: initialData,
+            items: items.toDropdownMenuItems,
+            onChanged: onChange,
+            underline: Container(),
+            isDense: true,
+            selectedItemBuilder: (context) {
+              return items
+                  .map(
+                    (item) => buildSelectedItem(
+                      item.profileInfo.firstName,
+                    ),
+                  )
+                  .toList();
+            },
           ),
         ),
       ),
     );
+  }
+}
+
+extension on List<MentorProfileData> {
+  List<DropdownMenuItem<MentorProfileData>> get toDropdownMenuItems {
+    return map((mentorProfile) => DropdownMenuItem<MentorProfileData>(
+          child: Text(
+              "${mentorProfile.profileInfo.firstName} ${mentorProfile.profileInfo.lastName}"),
+          value: mentorProfile,
+        )).toList();
   }
 }
 
@@ -229,11 +304,14 @@ class MentorInfo extends StatelessWidget {
 }
 
 class UserCoursesAndSessions extends StatelessWidget {
-  UserCoursesAndSessions({
+  UserCoursesAndSessions(
+    this.mentorProfileData, {
     Key? key,
-  }) : super(key: key);
+  })  : _currentCoursesList = ValueNotifier(mentorProfileData.activeSessions),
+        super(key: key);
 
-  final _currentCoursesList = ValueNotifier(fakeDataActive);
+  final MentorProfileData mentorProfileData;
+  final ValueNotifier<List<CourseStatusData>> _currentCoursesList;
 
   @override
   Widget build(BuildContext context) {
@@ -252,15 +330,17 @@ class UserCoursesAndSessions extends StatelessWidget {
               padding: const EdgeInsets.all(8.0),
               child: Center(
                 child: Text(
-                  "Rom's Courses",
+                  "${mentorProfileData.profileInfo.firstName}'s Courses",
+                  textAlign: TextAlign.center,
                   style: context.getTextTheme.headline5,
                 ),
               ),
             ),
             CourseFilterToggle(
               valueChanged: (isActive) {
-                _currentCoursesList.value =
-                    isActive ? fakeDataActive : fakeDataCompleted;
+                _currentCoursesList.value = isActive
+                    ? mentorProfileData.activeSessions
+                    : mentorProfileData.completedSessions;
               },
             ),
             const SizedBox(
@@ -270,9 +350,11 @@ class UserCoursesAndSessions extends StatelessWidget {
               child: ValueListenableBuilder<List<CourseStatusData>>(
                   valueListenable: _currentCoursesList,
                   builder: (context, data, _) {
-                    return ListView(
+                    return ListView.builder(
                       primary: false,
-                      children: data.map((e) => CommonCourseStatus(e)).toList(),
+                      itemCount: _currentCoursesList.value.length,
+                      itemBuilder: (context, index) =>
+                          CommonCourseStatus(_currentCoursesList.value[index]),
                     );
                   }),
             ),
@@ -365,131 +447,3 @@ class CourseFilterToggle extends StatelessWidget {
 extension on BuildContext {
   TextTheme get getTextTheme => Theme.of(this).textTheme;
 }
-
-final fakeDataActive = [
-  CourseStatusData(
-    contentTitle: "Hip Hop",
-    completedSessionsCount: 4,
-    totalSessionsCount: 12,
-    creditCount: 24,
-    ratingCount: 18,
-    primaryColor: Color(0xff66B4FF),
-    secondaryColor: Color(0xff399AFF),
-    sessions: [
-      SessionTileData(
-        sessionNumber: 1,
-        sessionDescription: "Quick recap & ATL Stomp",
-        creditCount: 5,
-        favCount: 1,
-        isLocked: false,
-      ),
-      SessionTileData(
-        sessionNumber: 2,
-        sessionDescription: "Some Description2",
-        creditCount: 10,
-        favCount: 20,
-        isLocked: true,
-      ),
-    ],
-  ),
-  CourseStatusData(
-    contentTitle: "Painting",
-    completedSessionsCount: 4,
-    totalSessionsCount: 8,
-    creditCount: 24,
-    ratingCount: 18,
-    primaryColor: Color(0xffFFB700),
-    secondaryColor: Color(0xffFFAD00),
-    sessions: [
-      SessionTileData(
-        sessionNumber: 1,
-        sessionDescription: "Some Description",
-        creditCount: 10,
-        favCount: 20,
-        isLocked: true,
-      ),
-    ],
-  ),
-  CourseStatusData(
-    contentTitle: "Painting",
-    completedSessionsCount: 4,
-    totalSessionsCount: 8,
-    creditCount: 24,
-    ratingCount: 18,
-    primaryColor: Color(0xffFFB700),
-    secondaryColor: Color(0xffFFAD00),
-    sessions: [
-      SessionTileData(
-        sessionNumber: 1,
-        sessionDescription: "Some Description",
-        creditCount: 10,
-        favCount: 20,
-        isLocked: true,
-      ),
-    ],
-  ),
-];
-
-final fakeDataCompleted = [
-  CourseStatusData(
-    contentTitle: "Painting",
-    completedSessionsCount: 8,
-    totalSessionsCount: 8,
-    creditCount: 24,
-    ratingCount: 18,
-    primaryColor: Color(0xffFFB700),
-    secondaryColor: Color(0xffFFAD00),
-    sessions: [
-      SessionTileData(
-        sessionNumber: 1,
-        sessionDescription: "Some Description",
-        creditCount: 10,
-        favCount: 20,
-        isLocked: true,
-      ),
-    ],
-  ),
-  CourseStatusData(
-    contentTitle: "Hip Hop",
-    completedSessionsCount: 12,
-    totalSessionsCount: 12,
-    creditCount: 24,
-    ratingCount: 18,
-    primaryColor: Color(0xff66B4FF),
-    secondaryColor: Color(0xff399AFF),
-    sessions: [
-      SessionTileData(
-        sessionNumber: 1,
-        sessionDescription: "Quick recap & ATL Stomp",
-        creditCount: 5,
-        favCount: 1,
-        isLocked: false,
-      ),
-      SessionTileData(
-        sessionNumber: 2,
-        sessionDescription: "Some Description2",
-        creditCount: 10,
-        favCount: 20,
-        isLocked: true,
-      ),
-    ],
-  ),
-  CourseStatusData(
-    contentTitle: "Painting",
-    completedSessionsCount: 8,
-    totalSessionsCount: 8,
-    creditCount: 24,
-    ratingCount: 18,
-    primaryColor: Color(0xffFFB700),
-    secondaryColor: Color(0xffFFAD00),
-    sessions: [
-      SessionTileData(
-        sessionNumber: 1,
-        sessionDescription: "Some Description",
-        creditCount: 10,
-        favCount: 20,
-        isLocked: true,
-      ),
-    ],
-  ),
-];

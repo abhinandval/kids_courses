@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:kids_courses/models/course_status_data.dart';
-import 'package:kids_courses/models/session_tile_data.dart';
-import 'package:kids_courses/res/images.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../models/course_status_data.dart';
+import '../models/session_tile_data.dart';
+import '../res/images.dart';
 import 'common_white_button.dart';
 
 const _colorWhiteBG = Color(0xffFFFAF3);
@@ -224,24 +224,26 @@ class SessionInfoTile extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Session ${data.sessionNumber}",
-                style: context.getTextTheme.caption,
-              ),
-              Text(
-                data.sessionDescription,
-                style: context.getTextTheme.subtitle2?.copyWith(
-                  color: Colors.black54,
-                  fontFamily: "Nexa-Bold",
-                  fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Session ${data.sessionNumber}",
+                  style: context.getTextTheme.caption,
                 ),
-              ),
-            ],
+                Text(
+                  data.sessionDescription,
+                  style: context.getTextTheme.subtitle2?.copyWith(
+                    color: Colors.black54,
+                    fontFamily: "Nexa-Bold",
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
+          // const Spacer(),
           if (data.isLocked)
             SvgPicture.asset(ImageRes.greenLockIcon)
           else ...[

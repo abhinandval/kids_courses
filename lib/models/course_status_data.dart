@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' show Color;
-import 'package:kids_courses/models/session_tile_data.dart';
+
+import 'session_tile_data.dart';
 
 class CourseStatusData {
   final Color primaryColor;
