@@ -62,11 +62,13 @@ class CommonCourseStatus extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    data.contentTitle,
-                    style: context.getTextTheme.headline6?.copyWith(
-                      color: Colors.white,
-                      fontFamily: 'Nexa-Bold',
+                  Expanded(
+                    child: Text(
+                      data.contentTitle,
+                      style: context.getTextTheme.headline6?.copyWith(
+                        color: Colors.white,
+                        fontFamily: 'Nexa-Bold',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),

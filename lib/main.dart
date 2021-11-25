@@ -25,6 +25,7 @@ class MyApp extends StatelessWidget {
       title: 'Course Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        fontFamily: 'Nexa-Bold',
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -48,9 +49,32 @@ class MyHomePage extends StatelessWidget {
               if (state is CourseSessionSuccess) {
                 return ProfileWidget(state.profileSessions);
               } else if (state is CourseSessionFailed) {
-                return const Text("Failed");
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("Failed to load data, Please retry"),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.read<CourseSessionCubit>().fetchData();
+                        },
+                        child: const Text("Retry"),
+                      )
+                    ],
+                  ),
+                );
               }
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 8),
+                    Text((state as CourseSessionLoading).message)
+                  ],
+                ),
+              );
             },
           ),
         ),
